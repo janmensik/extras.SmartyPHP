@@ -337,9 +337,9 @@ function smarty_function_thumb($params, &$smarty)
 	### Rckgabe-Strings erstellen
 	// change by Jan Mensik (added 'justimg')
 	if ($params['justimg'])
-		$_RETURN['img'] = $_DST['imgurl'];
-	elseif (empty($params['html'])) $_RETURN['img'] = '<img src="'.$_DST['imgurl'].'" '.$params['html'].' '.$_DST['string'].' alt="" title="" />';
-	else $_RETURN['img'] = '<img src="'.$_DST['imgurl'].'" '.$params['html'].' '.$_DST['string'].' />';
+		$_RETURN['img'] = $_DST['imgurl'].($params['vgen'] ? '?v='.time() : '');
+	elseif (empty($params['html'])) $_RETURN['img'] = '<img src="'.$_DST['imgurl'].($params['vgen'] ? '?v='.time() : '').'" '.$params['html'].' '.$_DST['string'].' alt="" title="" />';
+	else $_RETURN['img'] = '<img src="'.$_DST['imgurl'].($params['vgen'] ? '?v='.time() : '').'" '.$params['html'].' '.$_DST['string'].' />';
 
 	if ($params['link'] == "true")
 		{
@@ -498,6 +498,12 @@ function smarty_function_thumb($params, &$smarty)
 	
 	imagedestroy($_DST['image']);
 	imagedestroy($_SRC['image']);
+
+	# Jan Mensik
+	# pokud externi obrazek a nechci lokalne ukladat, smazu
+	if ($params['url'] && $params['urlnocache'] && $params['file']) {
+		unlink ($params['file']);
+		}
 	
 	// Und Bild ausgeben
 	return $returner;
