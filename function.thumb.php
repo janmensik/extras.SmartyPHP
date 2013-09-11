@@ -356,9 +356,11 @@ function smarty_function_thumb($params, &$smarty)
 		else $returner = '<a href="'.$params['linkurl'].'" ' . $params['linkhtml'] . '>'.$_RETURN['img'].'</a>';
 		}
 	else
-		{
 		$returner = $_RETURN['img'];
-		}
+
+	# Jan Mensik - pokud je zdrojovy obrazek mladsi, vygeneruji znovu
+	if (file_exists($_DST['file']) && filemtime ($_DST['file'])<filemtime ($_SRC['file']))
+		$defnocache = true;
 	
 	### Cache-Datei abfangen
 	if (file_exists($_DST['file']) AND !$params['dev'] AND !$defnocache) return $returner;
@@ -501,9 +503,8 @@ function smarty_function_thumb($params, &$smarty)
 
 	# Jan Mensik
 	# pokud externi obrazek a nechci lokalne ukladat, smazu
-	if ($params['url'] && $params['urlnocache'] && $params['file']) {
+	if ($params['url'] && $params['urlnocache'] && $params['file'])
 		unlink ($params['file']);
-		}
 	
 	// Und Bild ausgeben
 	return $returner;
