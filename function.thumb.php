@@ -161,30 +161,49 @@ function smarty_function_thumb($params, &$smarty)
 
 		$fmt_local = filemtime ($nazevsouboru);
 
-		# mam remote-image a urlcache zatim nevyprsel
-		if (file_exists ($nazevsouboru) && $fmt_local > time () - $params['urlcache']) {
-			$params['file'] = $nazevsouboru;
-			}
-		# mam remote-image a vzdaleny soubor neni mladsi nez moje kopie
-		elseif (file_exists ($nazevsouboru) && $fmt_local >= smarty_filemtime_remote ($params['url']) && smarty_filemtime_remote ($params['url']) > 0) {
-			$params['file'] = $nazevsouboru;
-			touch ($params['file']);
-			}
-		# musim sosnout
-		else {
-			$defnocache = true;
-			# zkusim nacist z url
-			$input = @implode ('',(@file ($params['url'])));
-			if ($input) {
-				# ulozim do cache adresare
-				$fp = fopen ($nazevsouboru, 'w');
-				fwrite ($fp, $input);
-				fclose ($fp);
-
-				# zapisu nazev souboru do $params['file']
+		# opakovane zkusim sosnout zpravny obrazek
+		$remoteload_repeats = $params['remoteload_repeats'] ? $params['remoteload_repeats'] : 10;
+		for ($i=0; $i < $remoteload_repeats; $i++) {
+			# mam remote-image a urlcache zatim nevyprsel
+			if (file_exists ($nazevsouboru) && $fmt_local > time () - $params['urlcache']) {
 				$params['file'] = $nazevsouboru;
 				}
+			# mam remote-image a vzdaleny soubor neni mladsi nez moje kopie
+			elseif (file_exists ($nazevsouboru) && $fmt_local >= smarty_filemtime_remote ($params['url']) && smarty_filemtime_remote ($params['url']) > 0) {
+				$params['file'] = $nazevsouboru;
+				touch ($params['file']);
+				}
+			# musim sosnout
+			else {
+				$defnocache = true;
+				# zkusim nacist z url
+				$input = @implode ('',(@file ($params['url'])));
+				if ($input) {
+					# ulozim do cache adresare
+					$fp = fopen ($nazevsouboru, 'w');
+					fwrite ($fp, $input);
+					fclose ($fp);
+
+					# zapisu nazev souboru do $params['file']
+					$params['file'] = $nazevsouboru;
+					}
+				}
+			
+			# kontrola, jestli nemam špatný obrázek
+			unset ($richeck);
+			$richeck = getimagesize($nazevsouboru);
+			if ($richeck[2]==1 && imagecreatefromgif ($nazevsouboru))
+				break;
+			elseif ($richeck[2]==2 && imagecreatefromjpeg ($nazevsouboru))
+				break;
+			elseif ($richeck[2]==3 && imagecreatefrompng ($nazevsouboru))
+				break;
+
+			if ($i==($remoteload_repeats-1))
+				return;
 			}
+		unset ($richeck);
+
 		if (!$params['name'])
 			$params['name'] = 'remote-cache.' . md5($params['url'].implode('',$params));
 		}
